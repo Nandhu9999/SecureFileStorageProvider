@@ -1,4 +1,4 @@
-namespace SecureFileStorageProvider
+namespace SecureFileStorageProvider.Models
 {
     public class WeatherForecast
     {
