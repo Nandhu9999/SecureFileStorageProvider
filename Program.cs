@@ -22,7 +22,7 @@ builder.Services.Configure<FormOptions>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "SecureFileStorageProvider", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "SecureFileStorageProvider", Version = "v1" });
 
     var jwtSettings = builder.Configuration.GetSection("JWT");
     var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
@@ -59,11 +59,12 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
+})
+    .AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
-    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
         ValidateAudience = true,
@@ -80,9 +81,26 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("db"), new MySqlServerVersion(new Version(8, 0, 21)))
 );
 
+// Add Cors
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Host Storage Bucket to Public
+string basePath = builder.Configuration.GetSection("StorageSettings")["basePath"];
+string storagePath = Path.Combine(app.Environment.ContentRootPath, basePath);
+if (!Directory.Exists(storagePath))
+{
+    Directory.CreateDirectory(storagePath);
+}
 var StorageSettings = builder.Configuration.GetSection("StorageSettings");
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -98,6 +116,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

@@ -14,7 +14,7 @@ namespace SecureFileStorageProvider.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    //[Authorize]
+    [Authorize]
     public class ApiController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
