@@ -29,8 +29,9 @@ namespace SecureFileStorageProvider.Controllers
                 string email = request.Email;
                 string password = request.Password;
 
-                var user = await _context.Users.FirstOrDefaultAsync( u => u.Email == email && u.Password == password );
+                var user = await _context.Users.FirstOrDefaultAsync( u => u.Email == email );
                 if (user == null) return Unauthorized(new { Success = false, Error = "User not found." });
+                if ( !isPasswordVerified(password, user.Password) ) return Unauthorized(new { Success = false, Error = "User not found." });
 
                 var USER_AUTH_CLAIMS = new[]
                 {
@@ -68,7 +69,7 @@ namespace SecureFileStorageProvider.Controllers
             try
             {
                 string email = request.Email;
-                string password = request.Password;
+                string password = hashPassword(request.Password);
                 string username = email.Split("@")[0].ToUpper();
 
                 var newUser = new User
@@ -87,11 +88,30 @@ namespace SecureFileStorageProvider.Controllers
                 return StatusCode(500, new { Success = false, Error = ex.Message });
             }
         }
+        public class UserDTO
+        {
+            public string Email { get; set; } = null!;
+            public string Password { get; set; } = null!;
+        }
+        private static bool isPasswordVerified(string inputPass, string storedPass)
+        {
+            if (string.IsNullOrEmpty(inputPass)) return false;
+            if (string.IsNullOrEmpty(storedPass)) return false;
+            var hashedInputPass = hashPassword(inputPass);
+            return hashedInputPass.Equals(storedPass, StringComparison.OrdinalIgnoreCase);
+        }
+        private static string hashPassword(string password)
+        {
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2"));
+                }
+                return builder.ToString();
+            }
+        }
     }
-}
-
-public class UserDTO
-{
-    public string Email { get; set; } = null!;
-    public string Password { get; set; } = null!;
 }

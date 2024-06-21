@@ -30,10 +30,9 @@ namespace SecureFileStorageProvider.Controllers
         public async Task<IActionResult> UploadFile(IFormFile INPUT_FILE)
         {
             // Verification
-            //var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            //if (userIdClaim == null) return StatusCode(401, new { Success = false, Error = "User ID not found in token" });
-            //if (!int.TryParse(userIdClaim, out int UserId)) return StatusCode(400, new { Success = false, Error = "Invalid user ID" });
-            var UserId = 1;
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim == null) return StatusCode(401, new { Success = false, Error = "User ID not found in token" });
+            if (!int.TryParse(userIdClaim, out int UserId)) return StatusCode(400, new { Success = false, Error = "Invalid user ID" });
             if (!INPUT_FILE.FileName.EndsWith(".zip")) return StatusCode(400, new { Success = false, Error = "Invalid file type" });
             
             // Storage Id
